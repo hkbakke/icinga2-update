@@ -31,25 +31,33 @@ class ApiConnector(object):
     def set_auth(self, username, password):
         self.auth = (username, password)
 
+    def update(self, resource, data):
+        url = '%s/%s' % (self.api_url, resource)
+        headers = {'Accept': 'application/json'}
+        r = requests.post(url, json.dumps(data), auth=self.auth, headers=headers, verify=False)
 
-def update_status(api_connector, hostname, service, status_code, status_msg):
-    url = '%s/actions/process-check-result?service=%s!%s' % (
-        api_connector.api_url,
+        if r.status_code != 200:
+            LOGGER.error(json.dumps(r.json(), indent=2))
+
+
+def update_service_status(api_connector, hostname, service, status_code, status_msg):
+    resource = 'actions/process-check-result?service=%s!%s' % (
         hostname,
         service
         )
-    headers = {
-        'Accept': 'application/json'
-        }
     data = {
         'exit_status': status_code,
         'plugin_output': status_msg
         }
+    api_connector.update(resource, data)
 
-    r = requests.post(url, json.dumps(data), auth=api_connector.auth, headers=headers, verify=False)
-
-    if r.status_code != 200:
-        LOGGER.error(json.dumps(r.json(), indent=2))
+def update_host_status(api_connector, hostname, status_code, status_msg):
+    resource = 'actions/process-check-result?host=%s' % hostname
+    data = {
+        'exit_status': status_code,
+        'plugin_output': status_msg
+        }
+    api_connector.update(resource, data)
 
 def get_default_msg(status_code):
     if status_code == 0:
@@ -66,7 +74,7 @@ def get_default_msg(status_code):
 def main():
     parser = argparse.ArgumentParser('Update icinga2 service status')
     parser.add_argument('--hostname', default=socket.getfqdn())
-    parser.add_argument('--service', required=True)
+    parser.add_argument('--service')
     parser.add_argument('--status-code', type=int, default=0)
     parser.add_argument('--status-msg')
     parser.add_argument('--systemd', action='store_true')
@@ -108,7 +116,10 @@ def main():
     conn = ApiConnector(config['server'], config['port'])
     conn.set_auth(config['username'], config['password'])
 
-    update_status(conn, args.hostname, args.service, status_code, msg)
+    if args.service:
+        update_service_status(conn, args.hostname, args.service, status_code, msg)
+    else:
+        update_host_status(conn, args.hostname, status_code, msg)
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -47,23 +47,19 @@ Example usage in Host object:
 Create a configuration file based on the [example file](src/config.yml.example). Either give the path to the configuration file with `--config` or place a file named `.icinga2-update` in the users homedir (should work on both Windows and Linux)
 
     icinga2-update --help
-    
+
 Examples:
 
     # Shell
     run_some_command; icinga2-update --service <service_name> --exit-code $?
-    
+
     # Systemd
     ExecStopPost=/usr/local/bin/icinga2-update --service <service_name> --systemd
-    
+
     # Manual
     icinga2-update --service <service_name> --status-code 0 --status-msg "Job OK"
-    
-Valid status codes are determined by Icinga2 and are currently:
 
-    0 - OK
-    1 - Warning
-    2 - Critical
-    3 - Unknown
+    # Update host status by leaving out --service
+    icinga2-update --status-code 0 --status-msg "Job OK"
 
 If `--hostname` is not provided the FQDN of the local host is used.
