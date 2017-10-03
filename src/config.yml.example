@@ -1,0 +1,4 @@
+username: root
+password: somerandomstring
+server: icinga2.example.com
+port: 5665
