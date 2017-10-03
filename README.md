@@ -44,7 +44,7 @@ Example usage in Host object:
     }
 
 ## Usage
-Create a configuration file based on the (example)[src/config.yml.example]. Either give the path to the configuration file with `--config` or place a file named `.icinga2-upate` in the users homedir (should work on both Windows and Linux)
+Create a configuration file based on the [example file](src/config.yml.example). Either give the path to the configuration file with `--config` or place a file named `.icinga2-upate` in the users homedir (should work on both Windows and Linux)
 
     icinga2-update --help
     
