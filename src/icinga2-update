@@ -39,25 +39,25 @@ class ApiConnector(object):
         if r.status_code != 200:
             LOGGER.error(json.dumps(r.json(), indent=2))
 
+    def update_service_status(self, hostname, service, status_code, status_msg):
+        resource = 'actions/process-check-result?service=%s!%s' % (
+            hostname,
+            service
+            )
+        data = {
+            'exit_status': status_code,
+            'plugin_output': status_msg
+            }
+        self.update(resource, data)
 
-def update_service_status(api_connector, hostname, service, status_code, status_msg):
-    resource = 'actions/process-check-result?service=%s!%s' % (
-        hostname,
-        service
-        )
-    data = {
-        'exit_status': status_code,
-        'plugin_output': status_msg
-        }
-    api_connector.update(resource, data)
+    def update_host_status(self, hostname, status_code, status_msg):
+        resource = 'actions/process-check-result?host=%s' % hostname
+        data = {
+            'exit_status': status_code,
+            'plugin_output': status_msg
+            }
+        self.update(resource, data)
 
-def update_host_status(api_connector, hostname, status_code, status_msg):
-    resource = 'actions/process-check-result?host=%s' % hostname
-    data = {
-        'exit_status': status_code,
-        'plugin_output': status_msg
-        }
-    api_connector.update(resource, data)
 
 def get_default_msg(status_code):
     if status_code == 0:
@@ -117,9 +117,9 @@ def main():
     conn.set_auth(config['username'], config['password'])
 
     if args.service:
-        update_service_status(conn, args.hostname, args.service, status_code, msg)
+        conn.update_service_status(args.hostname, args.service, status_code, msg)
     else:
-        update_host_status(conn, args.hostname, status_code, msg)
+        conn.update_host_status(args.hostname, status_code, msg)
 
 if __name__ == '__main__':
     sys.exit(main())
