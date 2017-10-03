@@ -54,7 +54,7 @@ Examples:
     run_some_command; icinga2-update --service <service_name> --exit-code $?
     
     # Systemd
-    ExecStartPost=/usr/local/bin/icinga2-update --service <service_name> --systemd
+    ExecStopPost=/usr/local/bin/icinga2-update --service <service_name> --systemd
     
     # Manual
     icinga2-update --service <service_name> --status-code 0 --status-msg "Job OK"
