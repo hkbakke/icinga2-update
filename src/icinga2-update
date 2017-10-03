@@ -13,9 +13,7 @@ from pathlib import Path
 import requests
 import yaml
 
-
 LOGGER = logging.getLogger(__name__)
-
 
 # Disable warnings when connecting to icinga2 servers with invalid cert
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -52,6 +50,18 @@ def update_status(api_connector, hostname, service, status_code, status_msg):
 
     if r.status_code != 200:
         LOGGER.error(json.dumps(r.json(), indent=2))
+
+def get_default_msg(status_code):
+    if status_code == 0:
+        msg = 'OK'
+    elif status_code == 1:
+        msg = 'Warning'
+    elif status_code == 2:
+        msg = 'Critical'
+    else:
+        msg = 'Unknown'
+
+    return msg
 
 def main():
     parser = argparse.ArgumentParser('Update icinga2 service status')
@@ -93,14 +103,7 @@ def main():
             status_code = 2
 
     if not msg:
-        if status_code == 0:
-            msg = 'OK'
-        elif status_code == 1:
-            msg = 'Warning'
-        elif status_code == 2:
-            msg = 'Critical'
-        else:
-            msg = 'Unknown'
+        msg = get_default_msg(status_code)
 
     conn = ApiConnector(config['server'], config['port'])
     conn.set_auth(config['username'], config['password'])
