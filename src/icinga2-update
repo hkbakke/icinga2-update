@@ -8,6 +8,8 @@ import urllib3
 import os
 import logging
 import json
+import subprocess
+import shlex
 from pathlib import Path
 
 import requests
@@ -38,6 +40,8 @@ class ApiConnector(object):
 
         if r.status_code != 200:
             LOGGER.error(json.dumps(r.json(), indent=2))
+        else:
+            LOGGER.debug(json.dumps(r.json(), indent=2))
 
     def update_service_status(self, hostname, service, status_code, status_msg):
         resource = 'actions/process-check-result?service=%s!%s' % (
@@ -71,6 +75,27 @@ def get_default_msg(status_code):
 
     return msg
 
+def get_exit_code_status(exit_code):
+    if exit_code == 0:
+        status_code = 0
+        msg = 'OK'
+    else:
+        status_code = 2
+        msg = 'Failed with exit code %s' % exit_code
+
+    return (status_code, msg)
+
+def execute_command(command):
+    cmd = shlex.split(command)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    while p.poll() is None:
+        for line in iter(p.stdout.readline, b''):
+            line = line.strip()
+            LOGGER.info(line.decode('utf-8'))
+
+    return p.returncode
+
 def main():
     parser = argparse.ArgumentParser('Update icinga2 service status')
     parser.add_argument('--hostname', default=socket.getfqdn())
@@ -80,10 +105,21 @@ def main():
     parser.add_argument('--systemd', action='store_true')
     parser.add_argument('--exit-code', type=int)
     parser.add_argument('--config')
+    parser.add_argument('--log-level', default='info')
+    parser.add_argument(
+        '--command',
+        help='Wrapper mode. Execute command, update status and return with exit code of command'
+        )
     args = parser.parse_args()
+
+    logger = logging.getLogger()
+    logger.setLevel(args.log_level.upper())
+    console = logging.StreamHandler()
+    logger.addHandler(console)
 
     status_code = args.status_code
     msg = args.status_msg
+    exit_code = 0
 
     if args.config:
         configfile = args.config
@@ -94,12 +130,7 @@ def main():
         config = yaml.load(f)
 
     if args.exit_code:
-        if args.exit_code == 0:
-            status_code = 0
-            msg = 'OK'
-        else:
-            status_code = 2
-            msg = 'Failed with exit code %s' % args.exit_code
+        status_code, msg = get_exit_code_status(args.exit_code)
     elif args.systemd:
         service_result = os.environ['SERVICE_RESULT']
         exit_status = os.environ['EXIT_STATUS']
@@ -109,6 +140,9 @@ def main():
             status_code = 0
         else:
             status_code = 2
+    elif args.command:
+        exit_code = execute_command(args.command)
+        status_code, msg = get_exit_code_status(exit_code)
 
     if not msg:
         msg = get_default_msg(status_code)
@@ -120,6 +154,8 @@ def main():
         conn.update_service_status(args.hostname, args.service, status_code, msg)
     else:
         conn.update_host_status(args.hostname, status_code, msg)
+
+    return exit_code
 
 if __name__ == '__main__':
     sys.exit(main())
