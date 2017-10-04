@@ -60,6 +60,6 @@ Examples:
     icinga2-update --service <service_name> --status-code 0 --status-msg "Job OK"
 
     # Update host status by leaving out --service
-    icinga2-update --status-code 0 --status-msg "Job OK"
+    icinga2-update --status-code 0 --status-msg "Host OK"
 
 If `--hostname` is not provided the FQDN of the local host is used.
