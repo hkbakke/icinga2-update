@@ -1,5 +1,5 @@
 # icinga2-update
-A simple command line utility to simplify updating status of passive Icinga2 service checks via the Icinga2 API. It is intended to be after cron jobs or as a post execution/failure job in systemd. It can also be used to update service status manually.
+A simple command line utility to simplify updating status of passive Icinga2 service checks via the Icinga2 API. It is intended to be ran after cron jobs or as a post execution/failure job in systemd. It can also be used to update service status manually.
 
 The main usecase is to get easy monitoring of cron jobs in Icinga2. This is achieved by adding service that executes a dummy check failing the service if no status is received within `check_interval`. You then update the status of these services by using `icinga2-update`.
 
