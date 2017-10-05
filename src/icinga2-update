@@ -120,11 +120,21 @@ def main():
     status_code = args.status_code
     msg = args.status_msg
     exit_code = 0
+    configfile = None
+    config_paths = [
+        args.config,
+        str(Path.home() / '.icinga2-update'),
+        '/etc/icinga2-update/config.yml'
+    ]
 
-    if args.config:
-        configfile = args.config
-    else:
-        configfile = str(Path.home() / '.icinga2-update')
+    for i in config_paths:
+        if i and os.path.exists(i):
+            configfile = i
+            break
+
+    if not configfile:
+        LOGGER.error('No configfile found')
+        return 2
 
     with open(configfile, 'r') as f:
         config = yaml.load(f)
