@@ -18,6 +18,9 @@ LOGGER = logging.getLogger(__name__)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+class ApiCallError(Exception):
+    pass
+
 class ApiConnector(object):
     def __init__(self, server, port, protocol='https'):
         self.api_url = '%s://%s:%s/v1' % (
@@ -36,7 +39,8 @@ class ApiConnector(object):
         r = requests.post(url, json.dumps(data), auth=self.auth, headers=headers, verify=False)
 
         if r.status_code != 200:
-            LOGGER.error(json.dumps(r.json(), indent=2))
+            error = json.dumps(r.json(), indent=2)
+            raise ApiCallError(error)
         else:
             LOGGER.debug(json.dumps(r.json(), indent=2))
 
@@ -138,10 +142,14 @@ def main():
     conn = ApiConnector(config['server'], config['port'])
     conn.set_auth(config['username'], config['password'])
 
-    if args.service:
-        conn.update_service_status(args.hostname, args.service, status_code, msg)
-    else:
-        conn.update_host_status(args.hostname, status_code, msg)
+    try:
+        if args.service:
+            conn.update_service_status(args.hostname, args.service, status_code, msg)
+        else:
+            conn.update_host_status(args.hostname, status_code, msg)
+    except ApiCallError as e:
+        LOGGER.error(str(e))
+        sys.exit(1)
 
 if __name__ == '__main__':
     sys.exit(main())
