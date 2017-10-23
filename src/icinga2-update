@@ -7,7 +7,6 @@ import json
 import urllib3
 import os
 import logging
-from pathlib import Path
 
 import requests
 import yaml
@@ -92,7 +91,6 @@ def main():
     parser.add_argument('--service')
     parser.add_argument('--status-code', type=int, default=0)
     parser.add_argument('--status-msg')
-    parser.add_argument('--systemd', action='store_true')
     parser.add_argument('--exit-code', type=int)
     parser.add_argument('--config')
     parser.add_argument('--log-level', default='info')
@@ -108,7 +106,7 @@ def main():
     configfile = None
     config_paths = [
         args.config,
-        str(Path.home() / '.icinga2-update'),
+        os.path.expanduser('~/.icinga2-update'),
         '/etc/icinga2-update/config.yml'
     ]
 
@@ -126,15 +124,6 @@ def main():
 
     if args.exit_code:
         status_code, msg = get_exit_code_status(args.exit_code)
-    elif args.systemd:
-        service_result = os.environ['SERVICE_RESULT']
-        exit_status = os.environ['EXIT_STATUS']
-        msg = '%s: %s' % (service_result, exit_status)
-
-        if exit_status == '0':
-            status_code = 0
-        else:
-            status_code = 2
 
     if not msg:
         msg = get_default_msg(status_code)
